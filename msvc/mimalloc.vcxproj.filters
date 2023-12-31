@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{4c705945-8f13-4de2-a595-92363dc459eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{0d999ba5-d154-47fe-8bc9-d188aa9581cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\prim">
+      <UniqueIdentifier>{0ef48560-677e-4475-8e7b-759f7249b230}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\prim\windows">
+      <UniqueIdentifier>{6222a8dd-6e48-4e26-b707-4487e400423c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\mimalloc">
+      <UniqueIdentifier>{dec4fa5e-eb84-4a06-9b92-1b9aa3fd7e4e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\alloc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\alloc-aligned.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\alloc-override.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\alloc-posix.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\arena.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\bitmap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\heap.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\init.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\options.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\os.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\page.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\page-queue.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\random.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\segment.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\segment-map.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\static.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\stats.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\prim\prim.c">
+      <Filter>src\prim</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\prim\windows\prim.c">
+      <Filter>src\prim\windows</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\bitmap.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\prim\windows\etw.h">
+      <Filter>src\prim\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc-new-delete.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc-override.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc\atomic.h">
+      <Filter>include\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc\internal.h">
+      <Filter>include\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc\prim.h">
+      <Filter>include\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc\track.h">
+      <Filter>include\mimalloc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mimalloc\types.h">
+      <Filter>include\mimalloc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\prim\readme.md">
+      <Filter>src\prim</Filter>
+    </None>
+    <None Include="..\src\prim\windows\readme.md">
+      <Filter>src\prim\windows</Filter>
+    </None>
+  </ItemGroup>
+</Project>
