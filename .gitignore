@@ -5,6 +5,7 @@ ide/vs20??/.vs
 ide/vs20??/VTune*
 out/
 docs/
+*.log
 *.zip
 *.tar
 *.gz
