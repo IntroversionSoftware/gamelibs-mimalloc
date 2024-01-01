@@ -8,6 +8,12 @@ cf_local = ['-D_GNU_SOURCE']
 inc_exports = ['include']
 inc_local = ['src']
 
+# Note: instead of doing this, we should follow mimalloc's example and override
+# the functions the right way, so we can hook the allocations with Tracy
+#if build_machine.system() != 'windows'
+#  cf_local += ['-DMI_MALLOC_OVERRIDE']
+#endif
+
 sources = [
   'src/alloc.c',
   'src/alloc-aligned.c',
