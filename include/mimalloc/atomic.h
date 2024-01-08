@@ -17,6 +17,11 @@ terms of the MIT license. A copy of the license can be found in the file
 // instead of passing the memory order as a parameter.
 // -----------------------------------------------------------------------------------------------
 
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-pragma"
+#endif
+
 #if defined(__cplusplus)
 // Use C++ atomics
 #include <atomic>
@@ -44,6 +49,10 @@ terms of the MIT license. A copy of the license can be found in the file
 #else
  #define MI_ATOMIC_VAR_INIT(x) ATOMIC_VAR_INIT(x)
 #endif
+#endif
+
+#if defined(__clang__)
+#pragma clang diagnostic pop
 #endif
 
 // Various defines for all used memory orders in mimalloc
