@@ -27,7 +27,11 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_trace_message(...)
 #endif
 
-#define mi_decl_cache_align     mi_decl_align(64)
+#if !defined(MI_CACHE_LINE)
+#define MI_CACHE_LINE           64
+#endif
+
+#define mi_decl_cache_align     mi_decl_align(MI_CACHE_LINE)
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4127)   // suppress constant conditional warning (due to MI_SECURE paths)
