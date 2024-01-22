@@ -249,7 +249,7 @@ static mi_thread_data_t* mi_thread_data_zalloc(void) {
   }
   
   if (td != NULL && !is_zero) {
-    _mi_memzero_aligned(td, sizeof(*td));
+    _mi_memzero_aligned(td, sizeof(*td) - sizeof(mi_memid_t));
   }
   return td;
 }
