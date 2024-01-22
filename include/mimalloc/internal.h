@@ -32,24 +32,28 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_cache_align     __declspec(align(MI_CACHE_LINE))
 #define mi_decl_weak
 #define mi_decl_hidden
+#define mi_decl_forceinline     __forceinline
 #elif (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__) // includes clang and icc
 #define mi_decl_noinline        __attribute__((noinline))
 #define mi_decl_thread          __thread
 #define mi_decl_cache_align     __attribute__((aligned(MI_CACHE_LINE)))
 #define mi_decl_weak            __attribute__((weak))
 #define mi_decl_hidden          __attribute__((visibility("hidden")))
+#define mi_decl_forceinline     __attribute__((always_inline))
 #elif __cplusplus >= 201103L    // c++11
 #define mi_decl_noinline
 #define mi_decl_thread          thread_local
 #define mi_decl_cache_align     alignas(MI_CACHE_LINE)
 #define mi_decl_weak
 #define mi_decl_hidden
+#define mi_decl_forceinline
 #else
 #define mi_decl_noinline
 #define mi_decl_thread          __thread        // hope for the best :-)
 #define mi_decl_cache_align
 #define mi_decl_weak
 #define mi_decl_hidden
+#define mi_decl_forceinline
 #endif
 
 #if defined(__EMSCRIPTEN__) && !defined(__wasi__)
@@ -1043,7 +1047,7 @@ static inline size_t mi_popcount(size_t x) {
 #include <intrin.h>
 extern bool _mi_cpu_has_fsrm;
 extern bool _mi_cpu_has_erms;
-static inline void _mi_memcpy(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy(void* dst, const void* src, size_t n) {
   if ((_mi_cpu_has_fsrm && n <= 128) || (_mi_cpu_has_erms && n > 128)) {
     __movsb((unsigned char*)dst, (const unsigned char*)src, n);
   }
@@ -1051,7 +1055,7 @@ static inline void _mi_memcpy(void* dst, const void* src, size_t n) {
     memcpy(dst, src, n);
   }
 }
-static inline void _mi_memzero(void* dst, size_t n) {
+static inline mi_decl_forceinline void _mi_memzero(void* dst, size_t n) {
   if ((_mi_cpu_has_fsrm && n <= 128) || (_mi_cpu_has_erms && n > 128)) {
     __stosb((unsigned char*)dst, 0, n);
   }
@@ -1060,10 +1064,10 @@ static inline void _mi_memzero(void* dst, size_t n) {
   }
 }
 #else
-static inline void _mi_memcpy(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy(void* dst, const void* src, size_t n) {
   memcpy(dst, src, n);
 }
-static inline void _mi_memzero(void* dst, size_t n) {
+static inline mi_decl_forceinline void _mi_memzero(void* dst, size_t n) {
   memset(dst, 0, n);
 }
 #endif
@@ -1075,26 +1079,26 @@ static inline void _mi_memzero(void* dst, size_t n) {
 
 #if (defined(__GNUC__) && (__GNUC__ >= 4)) || defined(__clang__)
 // On GCC/CLang we provide a hint that the pointers are word aligned.
-static inline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   mi_assert_internal(((uintptr_t)dst % MI_INTPTR_SIZE == 0) && ((uintptr_t)src % MI_INTPTR_SIZE == 0));
   void* adst = __builtin_assume_aligned(dst, MI_INTPTR_SIZE);
   const void* asrc = __builtin_assume_aligned(src, MI_INTPTR_SIZE);
   _mi_memcpy(adst, asrc, n);
 }
 
-static inline void _mi_memzero_aligned(void* dst, size_t n) {
+static inline mi_decl_forceinline void _mi_memzero_aligned(void* dst, size_t n) {
   mi_assert_internal((uintptr_t)dst % MI_INTPTR_SIZE == 0);
   void* adst = __builtin_assume_aligned(dst, MI_INTPTR_SIZE);
   _mi_memzero(adst, n);
 }
 #else
 // Default fallback on `_mi_memcpy`
-static inline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   mi_assert_internal(((uintptr_t)dst % MI_INTPTR_SIZE == 0) && ((uintptr_t)src % MI_INTPTR_SIZE == 0));
   _mi_memcpy(dst, src, n);
 }
 
-static inline void _mi_memzero_aligned(void* dst, size_t n) {
+static inline mi_decl_forceinline void _mi_memzero_aligned(void* dst, size_t n) {
   mi_assert_internal((uintptr_t)dst % MI_INTPTR_SIZE == 0);
   _mi_memzero(dst, n);
 }
