@@ -40,6 +40,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_weak
 #define mi_decl_hidden
 #define mi_decl_cold
+#define mi_decl_forceinline     __forceinline
 #elif (defined(__GNUC__) && (__GNUC__ >= 3)) || defined(__clang__) // includes clang and icc
 #define mi_decl_noinline        __attribute__((noinline))
 #define mi_decl_thread          __thread
@@ -52,6 +53,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #else
 #define mi_decl_cold
 #endif
+#define mi_decl_forceinline     __attribute__((always_inline))
 #elif __cplusplus >= 201103L    // c++11
 #define mi_decl_noinline
 #define mi_decl_thread          thread_local
@@ -60,6 +62,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_weak
 #define mi_decl_hidden
 #define mi_decl_cold
+#define mi_decl_forceinline
 #else
 #define mi_decl_noinline
 #define mi_decl_thread          __thread        // hope for the best :-)
@@ -68,6 +71,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define mi_decl_weak
 #define mi_decl_hidden
 #define mi_decl_cold
+#define mi_decl_forceinline
 #endif
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -1109,7 +1113,7 @@ static inline uintptr_t _mi_random_shuffle(uintptr_t x) {
 extern mi_decl_hidden bool _mi_cpu_has_fsrm;
 extern mi_decl_hidden bool _mi_cpu_has_erms;
 
-static inline void _mi_memcpy(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy(void* dst, const void* src, size_t n) {
   if ((_mi_cpu_has_fsrm && n <= 128) || (_mi_cpu_has_erms && n > 128)) {
     __movsb((unsigned char*)dst, (const unsigned char*)src, n);
   }
@@ -1117,7 +1121,7 @@ static inline void _mi_memcpy(void* dst, const void* src, size_t n) {
     memcpy(dst, src, n);
   }
 }
-static inline void _mi_memset(void* dst, int val, size_t n) {
+static inline mi_decl_forceinline void _mi_memset(void* dst, int val, size_t n) {
   if ((_mi_cpu_has_fsrm && n <= 128) || (_mi_cpu_has_erms && n > 128)) {
     __stosb((unsigned char*)dst, (uint8_t)val, n);
   }
@@ -1126,10 +1130,10 @@ static inline void _mi_memset(void* dst, int val, size_t n) {
   }
 }
 #else
-static inline void _mi_memcpy(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy(void* dst, const void* src, size_t n) {
   memcpy(dst, src, n);
 }
-static inline void _mi_memset(void* dst, int val, size_t n) {
+static inline mi_decl_forceinline void _mi_memset(void* dst, int val, size_t n) {
   memset(dst, val, n);
 }
 #endif
@@ -1141,26 +1145,26 @@ static inline void _mi_memset(void* dst, int val, size_t n) {
 
 #if (defined(__GNUC__) && (__GNUC__ >= 4)) || defined(__clang__)
 // On GCC/CLang we provide a hint that the pointers are word aligned.
-static inline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   mi_assert_internal(((uintptr_t)dst % MI_INTPTR_SIZE == 0) && ((uintptr_t)src % MI_INTPTR_SIZE == 0));
   void* adst = __builtin_assume_aligned(dst, MI_INTPTR_SIZE);
   const void* asrc = __builtin_assume_aligned(src, MI_INTPTR_SIZE);
   _mi_memcpy(adst, asrc, n);
 }
 
-static inline void _mi_memset_aligned(void* dst, int val, size_t n) {
+static inline mi_decl_forceinline void _mi_memset_aligned(void* dst, int val, size_t n) {
   mi_assert_internal((uintptr_t)dst % MI_INTPTR_SIZE == 0);
   void* adst = __builtin_assume_aligned(dst, MI_INTPTR_SIZE);
   _mi_memset(adst, val, n);
 }
 #else
 // Default fallback on `_mi_memcpy`
-static inline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
+static inline mi_decl_forceinline void _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   mi_assert_internal(((uintptr_t)dst % MI_INTPTR_SIZE == 0) && ((uintptr_t)src % MI_INTPTR_SIZE == 0));
   _mi_memcpy(dst, src, n);
 }
 
-static inline void _mi_memset_aligned(void* dst, int val, size_t n) {
+static inline mi_decl_forceinline void _mi_memset_aligned(void* dst, int val, size_t n) {
   mi_assert_internal((uintptr_t)dst % MI_INTPTR_SIZE == 0);
   _mi_memset(dst, val, n);
 }
