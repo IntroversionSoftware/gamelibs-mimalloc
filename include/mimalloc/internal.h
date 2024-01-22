@@ -24,7 +24,12 @@ terms of the MIT license. A copy of the license can be found in the file
 #endif
 
 #if !defined(MI_CACHE_LINE)
+#if defined(__APPLE__) && defined(__aarch64__)
+// Apple M1 has 128 byte cache lines
+#define MI_CACHE_LINE          128
+#else
 #define MI_CACHE_LINE          64
+#endif
 #endif
 
 #if defined(_MSC_VER)
