@@ -1467,28 +1467,28 @@ static inline size_t _mi_random_shuffle(size_t x) {
 // Provide our own `_mi_memcpy/set` for potential performance optimizations.
 // ---------------------------------------------------------------------------------
 
-static inline void* _mi_memcpy(void* dst, const void* src, size_t n) {
+static mi_decl_forceinline void* _mi_memcpy(void* dst, const void* src, size_t n) {
   return memcpy(dst, src, n);
 }
 
-static inline void* _mi_memset(void* dst, int val, size_t n) {  
+static mi_decl_forceinline void* _mi_memset(void* dst, int val, size_t n) {
   return memset(dst, val, n);
 }
 
-static inline void* _mi_memset_backward(void* dst, int val, size_t n) {
+static mi_decl_forceinline void* _mi_memset_backward(void* dst, int val, size_t n) {
   memset((uint8_t*)dst - n, val, n);
   return dst;
 }
 
-static inline void* _mi_memzero(void* dst, size_t n) {
+static mi_decl_forceinline void* _mi_memzero(void* dst, size_t n) {
   return _mi_memset(dst, 0, n);
 }
 
-static inline void* _mi_memzero_backward(void* dst, size_t n) {
+static mi_decl_forceinline void* _mi_memzero_backward(void* dst, size_t n) {
   return _mi_memset_backward(dst, 0, n);
 }
 
-static inline void* _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
+static mi_decl_forceinline void* _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   // on gcc/clang we can provide a hint that the pointers are word aligned.
   mi_assert_internal(_mi_is_aligned(dst,MI_SIZE_SIZE) && _mi_is_aligned(src,MI_SIZE_SIZE));
   void* adst = mi_assume_aligned(dst, MI_SIZE_SIZE);
@@ -1496,13 +1496,13 @@ static inline void* _mi_memcpy_aligned(void* dst, const void* src, size_t n) {
   return _mi_memcpy(adst, asrc, n);
 }
 
-static inline void* _mi_memset_aligned(void* dst, int val, size_t n) {
+static mi_decl_forceinline void* _mi_memset_aligned(void* dst, int val, size_t n) {
   mi_assert_internal(_mi_is_aligned(dst,MI_SIZE_SIZE));
   void* adst = mi_assume_aligned(dst, MI_SIZE_SIZE);
   return _mi_memset(adst, val, n);
 }
 
-static inline void* _mi_memzero_aligned(void* dst, size_t n) {
+static mi_decl_forceinline void* _mi_memzero_aligned(void* dst, size_t n) {
   return _mi_memset_aligned(dst, 0, n);
 }
 
