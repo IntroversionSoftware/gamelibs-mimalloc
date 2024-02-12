@@ -483,9 +483,13 @@ static bool mi_try_new_handler(bool nothrow) {
 typedef void (*std_new_handler_t)(void);
 
 #if (defined(__GNUC__) || (defined(__clang__) && !defined(_MSC_VER)))  // exclude clang-cl, see issue #631
+#if !defined(__MINGW32__)
 std_new_handler_t __attribute__((weak)) _ZSt15get_new_handlerv(void) {
   return NULL;
 }
+#else
+extern std_new_handler_t __attribute__((weak)) _ZSt15get_new_handlerv(void);
+#endif
 static std_new_handler_t mi_get_new_handler(void) {
   return _ZSt15get_new_handlerv();
 }
