@@ -21,7 +21,7 @@ CC       ?= gcc
 RANLIB   ?= ranlib
 RM       ?= rm -f
 
-BUILD_DIR := build
+BUILD_DIR := out
 BUILD_ID  ?= default-build-id
 OBJ_DIR   := $(BUILD_DIR)/$(BUILD_ID)
 
