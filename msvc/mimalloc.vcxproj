@@ -35,7 +35,10 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <ImportGroup Label="PropertySheets">
-    <Import Project="..\..\Toolset.props" />
+    <!-- Global Reference sheet -->
+    <Import Project="..\..\Setup.props" Condition="!exists('..\..\Toolset.props') And exists('..\..\Setup.props')" />
+    <!-- Toolset Property sheet -->
+    <Import Project="..\..\Toolset.props" Condition="exists('..\..\Toolset.props')" />
   </ImportGroup>
   <PropertyGroup Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
