@@ -177,7 +177,7 @@ typedef int32_t  mi_ssize_t;
 #if MI_INTPTR_SIZE > 4
 #define MI_SEGMENT_SHIFT                  ( 9 + MI_SEGMENT_SLICE_SHIFT)  // 32MiB
 #else
-#define MI_SEGMENT_SHIFT                  ( 7 + MI_SEGMENT_SLICE_SHIFT)  // 4MiB on 32-bit
+#define MI_SEGMENT_SHIFT                  ( 6 + MI_SEGMENT_SLICE_SHIFT)  // 2MiB on 32-bit
 #endif
 #endif
 
