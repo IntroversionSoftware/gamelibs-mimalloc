@@ -615,6 +615,11 @@ static bool mi_arena_try_purge(mi_arena_t* arena, mi_msecs_t now, bool force)
   return any_purged;
 }
 
+#if defined(_WIN32) && defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpointer-sign"
+#endif
+
 static void mi_arenas_try_purge( bool force, bool visit_all ) 
 {
   if (_mi_preloading() || mi_arena_purge_delay() <= 0) return;  // nothing will be scheduled
@@ -653,6 +658,10 @@ static void mi_arenas_try_purge( bool force, bool visit_all )
     }
   }
 }
+
+#if defined(_WIN32) && defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 
 /* -----------------------------------------------------------
