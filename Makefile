@@ -56,7 +56,7 @@ HEADERS_INST := $(patsubst include/%,$(includedir)/%,$(HEADERS))
 OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SOURCES))
 
 CFLAGS ?= -O2
-CFLAGS += -std=c17 -Iinclude -Isrc -I$(includedir) -D_GNU_SOURCE
+CFLAGS += -fno-lto -std=c17 -Iinclude -Isrc -I$(includedir) -D_GNU_SOURCE
 
 .PHONY: install
 

@@ -3,7 +3,7 @@ project('mimalloc', 'c', version: '2.1.2', default_options: ['c_std=c11'])
 compiler = meson.get_compiler('c')
 link_deps = []
 cf_exports = []
-cf_local = ['-D_GNU_SOURCE']
+cf_local = ['-fno-lto', '-D_GNU_SOURCE']
 
 inc_exports = ['include']
 inc_local = ['src']
