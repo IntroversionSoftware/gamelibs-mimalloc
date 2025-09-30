@@ -58,6 +58,9 @@ OBJECTS := $(patsubst %.c,$(OBJ_DIR)/%.o,$(SOURCES))
 CFLAGS ?= -O2
 CFLAGS += -fno-lto -std=c17 -Iinclude -Isrc -I$(includedir) -D_GNU_SOURCE
 
+# Need to remove -fwhole-program-vtables because it depends on -flto
+CFLAGS := $(filter-out -flto -fwhole-program-vtables,$(CFLAGS))
+
 .PHONY: install
 
 all: $(OBJ_DIR)/$(LIB)
