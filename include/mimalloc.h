@@ -416,7 +416,6 @@ mi_decl_export int  mi_reserve_huge_os_pages(size_t pages, double max_secs, size
 mi_decl_export void mi_collect_reduce(size_t target_thread_owned) mi_attr_noexcept;
 
 mi_decl_export void mi_stats_reset(void)      mi_attr_noexcept;
-mi_decl_export void mi_stats_merge(void)      mi_attr_noexcept;
 mi_decl_export void mi_stats_print(void* out) mi_attr_noexcept;  // backward compatibility: `out` is ignored and should be NULL
 
 mi_decl_export void mi_stats_print_out(mi_output_fun* out, void* arg) mi_attr_noexcept;  // not deprecated but declared in `mimalloc-stats.h` now.
