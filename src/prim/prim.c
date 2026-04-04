@@ -29,14 +29,10 @@ terms of the MIT license. A copy of the license can be found in the file
 // Generic process initialization
 #if !defined(MI_PRIM_HAS_PROCESS_ATTACH)
 #if defined(__GNUC__) || defined(__clang__)
-  // gcc,clang: use the constructor/destructor attribute with the highest user priority (<=100 is reserved for the compiler itself)
-  #if defined(__clang__) || (__GNUC__ >= 5 && !defined(__APPLE__))  // gcc has support since 4.2 but not on macOS (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=119435)
-    #define mi_attr_constructor __attribute__((constructor(101)))
-    #define mi_attr_destructor  __attribute__((destructor(101)))
-  #else
-    #define mi_attr_constructor __attribute__((constructor))
-    #define mi_attr_destructor  __attribute__((destructor))
-  #endif
+  // gcc,clang: use the constructor/destructor attribute
+  // which for both seem to run before regular constructors/destructors
+  #define mi_attr_constructor __attribute__((constructor(101)))
+  #define mi_attr_destructor  __attribute__((destructor(101)))
   static void mi_attr_constructor mi_process_attach(void) {
     _mi_auto_process_init();
   }
