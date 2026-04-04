@@ -31,13 +31,8 @@ terms of the MIT license. A copy of the license can be found in the file
 #if defined(__GNUC__) || defined(__clang__)
   // gcc,clang: use the constructor/destructor attribute
   // which for both seem to run before regular constructors/destructors
-  #if defined(__clang__)
-    #define mi_attr_constructor __attribute__((constructor(101)))
-    #define mi_attr_destructor  __attribute__((destructor(101)))
-  #else
-    #define mi_attr_constructor __attribute__((constructor))
-    #define mi_attr_destructor  __attribute__((destructor))
-  #endif
+  #define mi_attr_constructor __attribute__((constructor(101)))
+  #define mi_attr_destructor  __attribute__((destructor(101)))
   static void mi_attr_constructor mi_process_attach(void) {
     _mi_auto_process_init();
   }
