@@ -14,9 +14,19 @@ terms of the MIT license. A copy of the license can be found in the file
 #define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
+#include <intrin.h>
 #elif !defined(__wasi__) && (!defined(__EMSCRIPTEN__) || defined(__EMSCRIPTEN_PTHREADS__))
 #define  MI_USE_PTHREADS
 #include <pthread.h>
+#endif
+
+// clang-cl intrin.h doesn't have __ldar64; provide it via inline asm
+#if defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+__forceinline unsigned __int64 __ldar64(unsigned __int64 volatile* p) {
+    unsigned __int64 x;
+    __asm__ volatile ("ldar %0, [%1]" : "=r"(x) : "r"(p) : "memory");
+    return x;
+}
 #endif
 
 // --------------------------------------------------------------------------------------------
@@ -169,7 +179,6 @@ static inline void mi_atomic_maxi64_relaxed(volatile int64_t* p, int64_t x) {
 #elif defined(_MSC_VER)
 
 // Legacy MSVC plain C compilation wrapper that uses Interlocked operations to model C11 atomics.
-#include <intrin.h>
 #ifdef _WIN64
 typedef LONG64   msc_intptr_t;
 #define MI_64(f) f##64
@@ -230,7 +239,15 @@ static inline uintptr_t mi_atomic_load_explicit(_Atomic(uintptr_t) const* p, mi_
   (void)(mo);
 #if defined(_M_IX86) || defined(_M_X64)
   return *p;
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
+  if (mo > mi_memory_order_relaxed) {
+    return (uintptr_t)__ldar64((unsigned __int64 volatile*)p);
+  }
+  else {
+    return (uintptr_t)__iso_volatile_load64((const volatile __int64*)p);
+  }
 #else
+  // CAS fallback for other non-x86 MSVC targets (ARM32, etc.)
   uintptr_t x = *p;
   if (mo > mi_memory_order_relaxed) {
     while (!mi_atomic_compare_exchange_weak_explicit((_Atomic(uintptr_t)*)p, &x, x, mo, mi_memory_order_relaxed)) { /* nothing */ };
