@@ -429,6 +429,10 @@ typedef _Atomic(uintptr_t) mi_atomic_guard_t;
 static inline void mi_atomic_yield(void) {
   std::this_thread::yield();
 }
+#elif defined(_M_ARM64) || defined(_M_ARM64EC)
+static inline void mi_atomic_yield(void) {
+  __yield();
+}
 #elif defined(_WIN32)
 static inline void mi_atomic_yield(void) {
   YieldProcessor();
