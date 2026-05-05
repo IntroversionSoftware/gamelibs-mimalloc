@@ -150,7 +150,12 @@ void* _mi_os_get_aligned_hint(size_t try_alignment, size_t size)
   if (hint == 0 || hint > MI_HINT_MAX) {   // wrap or initialize
     uintptr_t init = MI_HINT_BASE;
     #if (MI_SECURE>=1 || defined(NDEBUG))  // security: randomize start of aligned allocations unless in debug mode
-    const uintptr_t r = _mi_theap_random_next(mi_theap_get_default());
+    // Use process-global weak randomness rather than the per-thread heap: this branch
+    // can run inside mi_thread_init (via mi_arena_reserve -> _mi_os_alloc_aligned ->
+    // win_virtual_alloc_prim_once) before the default heap is installed, and going
+    // through mi_theap_get_default would re-enter mi_thread_init and self-deadlock on
+    // the arena SRW lock the outer call already holds.
+    const uintptr_t r = _mi_os_random_weak(0);
     init = init + ((MI_HINT_ALIGN * ((r>>17) & 0xFFFFF)) % MI_HINT_AREA);  // (randomly 20 bits)*4MiB == 0 to 4TiB
     #endif
     uintptr_t expected = hint + size;
