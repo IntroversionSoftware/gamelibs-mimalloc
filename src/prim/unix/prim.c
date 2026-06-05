@@ -990,6 +990,16 @@ bool _mi_prim_thread_is_in_threadpool(void) {
   return false;
 }
 
+// Architectural processor-yield: pause/isb is the right hint inside short
+// spin loops -- it backs off the pipeline / SMT sibling without descheduling
+// the thread. sleep(0)/sched_yield() would invoke the OS scheduler, which is
+// the wrong granularity for a spin lock and can cost microseconds.
 void _mi_prim_thread_yield(void) {
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+  __asm__ volatile ("pause" ::: "memory");
+#elif (defined(__GNUC__) || defined(__clang__)) && defined(__aarch64__)
+  __asm__ volatile ("isb");
+#else
   sleep(0);
+#endif
 }

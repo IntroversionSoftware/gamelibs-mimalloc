@@ -703,8 +703,19 @@ bool _mi_prim_thread_is_in_threadpool(void) {
   return false;
 }
 
+// Architectural processor-yield: pause/yield is the right hint inside short
+// spin loops -- it backs off the pipeline / SMT sibling without descheduling
+// the thread. SwitchToThread() would yield control to the OS scheduler, which
+// is the wrong granularity for a spin lock and can cost microseconds.
+// See upstream mimalloc issues #1215, #1225 for the YieldProcessor rationale.
 void _mi_prim_thread_yield(void) {
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+  __yield();
+#elif defined(_M_IX86) || defined(_M_X64)
+  YieldProcessor();  // expands to _mm_pause()
+#else
   SwitchToThread();
+#endif
 }
 
 //----------------------------------------------------------------
