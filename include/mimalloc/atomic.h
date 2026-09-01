@@ -163,6 +163,23 @@ static inline void mi_atomic_maxi64_relaxed(volatile int64_t* p, int64_t x) {
 // It is recommended to always compile as C++ when using MSVC.
 
 #include <intrin.h>
+
+// clang-cl's intrin.h does not declare __ldar64 or __stlr64 (see
+// https://github.com/llvm/llvm-project/issues/121689); provide them here via
+// inline asm so the acquire/release load/store paths below can use them
+// instead of falling back to a full DMB or an interlocked RMW.
+#if defined(__clang__) && (defined(_M_ARM64) || defined(_M_ARM64EC))
+__forceinline unsigned __int64 __ldar64(const unsigned __int64 volatile* p) {
+  unsigned __int64 x;
+  __asm__ volatile ("ldar %0, [%1]" : "=r"(x) : "r"(p) : "memory");
+  return x;
+}
+
+__forceinline void __stlr64(unsigned __int64 volatile* p, unsigned __int64 x) {
+  __asm__ volatile ("stlr %1, [%0]" : : "r"(p), "r"(x) : "memory");
+}
+#endif
+
 #ifdef _WIN64
 typedef LONG64        msc_intptr_t;
 #define MI_MSC_64(f)  f##64
@@ -182,25 +199,54 @@ typedef enum mi_memory_order_e {
   mi_memory_order_seq_cst
 } mi_memory_order;
 
+// On ARM/ARM64, the Interlocked APIs have _acq/_rel/_nf variants that map to
+// one-sided barrier instructions (LDAXR/STLXR/etc), avoiding the full DMB that
+// the unsuffixed variants emit. On x86/x64 all loads/stores are already
+// acquire/release by the hardware memory model, so we always use the plain form.
+//
+// MI_INTERLOCKED(f64, mo, ...) calls the appropriately-suffixed variant of f64
+// with the given arguments. Callers pass MI_MSC_64(f) as f64 so that the suffix
+// lands after the "64" (e.g. _InterlockedExchangeAdd64_nf).
+//
+// The arguments are included inside the macro expansion so that each branch is a
+// complete call expression rather than a function pointer -- clang-cl requires
+// builtin intrinsics to be called directly and rejects function pointer forms.
+//
+// MI_INTERLOCKED_PASTE forces full expansion of f64 before ## is applied,
+// preventing the unexpanded closing ')' of MI_MSC_64(...) from being pasted
+// instead.
+//
+// Since mo is always a compile-time constant at real callsites (passed via the
+// mi_memory_order_* macros), the dead branches fold away and the compiler emits
+// a direct call to the correct intrinsic with no runtime overhead.
+#if defined(_M_ARM64) || defined(_M_ARM64EC)
+  #define MI_INTERLOCKED_PASTE(f64, suffix)  f64##suffix
+  #define MI_INTERLOCKED(f64, mo, ...)  \
+    ( (mo) == mi_memory_order_relaxed ? MI_INTERLOCKED_PASTE(f64, _nf)(__VA_ARGS__)  : \
+      (mo) == mi_memory_order_acquire ? MI_INTERLOCKED_PASTE(f64, _acq)(__VA_ARGS__) : \
+      (mo) == mi_memory_order_release ? MI_INTERLOCKED_PASTE(f64, _rel)(__VA_ARGS__) : \
+                                        f64(__VA_ARGS__) )
+#else
+  // x86/x64 (and ARM32, which lacks the suffixed variants for the int64 ops we
+  // use): consume mo to avoid unused-variable warnings, always use plain form.
+  #define MI_INTERLOCKED(f64, mo, ...)  ((void)(mo), f64(__VA_ARGS__))
+#endif
+
 static inline uintptr_t mi_atomic_fetch_add_explicit(_Atomic(uintptr_t)*p, uintptr_t add, mi_memory_order mo) {
-  (void)(mo);
-  return (uintptr_t)MI_MSC_64(_InterlockedExchangeAdd)((volatile msc_intptr_t*)p, (msc_intptr_t)add);
+  return (uintptr_t)MI_INTERLOCKED(MI_MSC_64(_InterlockedExchangeAdd), mo, (volatile msc_intptr_t*)p, (msc_intptr_t)add);
 }
 static inline uintptr_t mi_atomic_fetch_sub_explicit(_Atomic(uintptr_t)*p, uintptr_t sub, mi_memory_order mo) {
-  (void)(mo);
-  return (uintptr_t)MI_MSC_64(_InterlockedExchangeAdd)((volatile msc_intptr_t*)p, -((msc_intptr_t)sub));
+  return (uintptr_t)MI_INTERLOCKED(MI_MSC_64(_InterlockedExchangeAdd), mo, (volatile msc_intptr_t*)p, -((msc_intptr_t)sub));
 }
 static inline uintptr_t mi_atomic_fetch_and_explicit(_Atomic(uintptr_t)*p, uintptr_t x, mi_memory_order mo) {
-  (void)(mo);
-  return (uintptr_t)MI_MSC_64(_InterlockedAnd)((volatile msc_intptr_t*)p, (msc_intptr_t)x);
+  return (uintptr_t)MI_INTERLOCKED(MI_MSC_64(_InterlockedAnd), mo, (volatile msc_intptr_t*)p, (msc_intptr_t)x);
 }
 static inline uintptr_t mi_atomic_fetch_or_explicit(_Atomic(uintptr_t)*p, uintptr_t x, mi_memory_order mo) {
-  (void)(mo);
-  return (uintptr_t)MI_MSC_64(_InterlockedOr)((volatile msc_intptr_t*)p, (msc_intptr_t)x);
+  return (uintptr_t)MI_INTERLOCKED(MI_MSC_64(_InterlockedOr), mo, (volatile msc_intptr_t*)p, (msc_intptr_t)x);
 }
 static inline bool mi_atomic_compare_exchange_strong_explicit(_Atomic(uintptr_t)*p, uintptr_t* expected, uintptr_t desired, mi_memory_order mo1, mi_memory_order mo2) {
-  (void)(mo1); (void)(mo2);
-  const uintptr_t read = (uintptr_t)MI_MSC_64(_InterlockedCompareExchange)((volatile msc_intptr_t*)p, (msc_intptr_t)desired, (msc_intptr_t)(*expected));
+  (void)(mo2);
+  const uintptr_t read = (uintptr_t)MI_INTERLOCKED(MI_MSC_64(_InterlockedCompareExchange), mo1, (volatile msc_intptr_t*)p, (msc_intptr_t)desired, (msc_intptr_t)(*expected));
   if (read == *expected) {
     return true;
   }
@@ -213,8 +259,7 @@ static inline bool mi_atomic_compare_exchange_weak_explicit(_Atomic(uintptr_t)*p
   return mi_atomic_compare_exchange_strong_explicit(p, expected, desired, mo1, mo2);
 }
 static inline uintptr_t mi_atomic_exchange_explicit(_Atomic(uintptr_t)*p, uintptr_t exchange, mi_memory_order mo) {
-  (void)(mo);
-  return (uintptr_t)MI_MSC_64(_InterlockedExchange)((volatile msc_intptr_t*)p, (msc_intptr_t)exchange);
+  return (uintptr_t)MI_INTERLOCKED(MI_MSC_64(_InterlockedExchange), mo, (volatile msc_intptr_t*)p, (msc_intptr_t)exchange);
 }
 
 static inline uintptr_t mi_atomic_load_explicit(_Atomic(uintptr_t) const* p, mi_memory_order mo) {
@@ -227,7 +272,7 @@ static inline uintptr_t mi_atomic_load_explicit(_Atomic(uintptr_t) const* p, mi_
     if (mo == mi_memory_order_relaxed) {
       return (uintptr_t)MI_MSC_XX(__iso_volatile_load)((volatile const intptr_t*)p);
     }
-    #if !defined(__clang__) // work around __ldar missing in clang-cl, see https://github.com/llvm/llvm-project/issues/121689
+    #if !defined(__clang__) || defined(_M_ARM64) || defined(_M_ARM64EC) // on clang-cl, __ldar64 is our inline-asm shim above (__ldar32 is still missing on ARM32)
     else if (mo <= mi_memory_order_acquire) {
       return MI_MSC_XX(__ldar)((volatile const uintptr_t*)p);
     }
@@ -251,7 +296,7 @@ static inline void mi_atomic_store_explicit(_Atomic(uintptr_t)*p, uintptr_t x, m
     if (mo == mi_memory_order_relaxed) {
       MI_MSC_XX(__iso_volatile_store)((volatile intptr_t*)p, x);
     }
-    #if !defined(__clang__) // work around __stlr missing in clang-cl, see https://github.com/llvm/llvm-project/issues/121689
+    #if !defined(__clang__) || defined(_M_ARM64) || defined(_M_ARM64EC) // on clang-cl, __stlr64 is our inline-asm shim above (__stlr32 is still missing on ARM32)
     else if (mo <= mi_memory_order_release) {
       MI_MSC_XX(__stlr)((volatile uintptr_t*)p,x);
     }
@@ -273,7 +318,7 @@ static inline int64_t mi_atomic_loadi64_explicit(_Atomic(int64_t)*p, mi_memory_o
     if (mo == mi_memory_order_relaxed) {
       return __iso_volatile_load64((volatile const int64_t*)p);
     }
-    #if defined(_M_ARM64) && !defined(__clang__) // work around __ldar64 missing in clang-cl, see https://github.com/llvm/llvm-project/issues/121689
+    #if defined(_M_ARM64) // on clang-cl, __ldar64 is our inline-asm shim above
     else if (mo <= mi_memory_order_acquire) {
       return __ldar64((volatile const uintptr_t*)p);
     }
@@ -298,7 +343,7 @@ static inline void mi_atomic_storei64_explicit(_Atomic(int64_t)*p, int64_t x, mi
     if (mo == mi_memory_order_relaxed) {
       __iso_volatile_store64((volatile int64_t*)p,x);
     }
-    #if defined(_M_ARM64) && !defined(__clang__) // work around __stlr64 missing in clang-cl, see https://github.com/llvm/llvm-project/issues/121689
+    #if defined(_M_ARM64) // on clang-cl, __stlr64 is our inline-asm shim above
     else if (mo == mi_memory_order_release) {
       __stlr64((volatile uint64_t*)p, (uint64_t)x);
     }
