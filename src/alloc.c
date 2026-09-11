@@ -401,7 +401,7 @@ mi_decl_nodiscard mi_decl_restrict void* mi_ucalloc(size_t count, size_t size, s
 static mi_decl_restrict void* mi_theap_mallocn(mi_theap_t* theap, size_t count, size_t size) mi_attr_noexcept {
   size_t total;
   if (mi_count_size_overflow(count, size, &total)) return NULL;
-  return mi_theap_malloc(theap, total);
+  return _mi_theap_malloc_zero(theap, total, false, 0, NULL);  // theap may be NULL on a fresh thread
 }
 
 mi_decl_nodiscard mi_decl_restrict void* mi_mallocn(size_t count, size_t size) mi_attr_noexcept {
@@ -499,7 +499,7 @@ void* _mi_theap_realloc_zero(mi_theap_t* theap, void* p, size_t newsize, bool ze
 mi_decl_nodiscard void* mi_theap_realloc(mi_theap_t* theap, void* p, size_t newsize) mi_attr_noexcept {
   // optimize p==NULL 
   if (p==NULL) {
-    return mi_theap_malloc(theap,newsize);
+    return _mi_theap_malloc_zero(theap, newsize, false, 0, NULL);  // theap may be NULL on a fresh thread
   }
   else {
     return _mi_theap_realloc_zero(theap, p, newsize, false);
@@ -595,7 +595,7 @@ mi_decl_nodiscard static mi_decl_restrict char* mi_theap_strdup(mi_theap_t* thea
   if (s == NULL) return NULL;
   size_t len = _mi_strlen(s);
   if (len > MI_MAX_ALLOC_SIZE - 1) return NULL;  // prevent overflow on len+1
-  char* t = (char*)mi_theap_malloc(theap,len+1);
+  char* t = (char*)_mi_theap_malloc_zero(theap, len+1, false, 0, NULL);  // theap may be NULL on a fresh thread
   if (t == NULL) return NULL;
   _mi_memcpy(t, s, len);
   t[len] = 0;
@@ -615,7 +615,7 @@ mi_decl_nodiscard static mi_decl_restrict char* mi_theap_strndup(mi_theap_t* the
   if (s == NULL) return NULL;
   const size_t len = _mi_strnlen(s,n);  // len <= n
   if (len > MI_MAX_ALLOC_SIZE - 1) return NULL;  // prevent overflow on len+1
-  char* t = (char*)mi_theap_malloc(theap, len+1);
+  char* t = (char*)_mi_theap_malloc_zero(theap, len+1, false, 0, NULL);  // theap may be NULL on a fresh thread
   if (t == NULL) return NULL;
   _mi_memcpy(t, s, len);
   t[len] = 0;
@@ -821,7 +821,7 @@ static mi_decl_noinline void* mi_theap_try_new(mi_theap_t* theap, size_t size, b
   void* p = NULL;
   for(int i = 0; i < MI_TRY_NEW_MAX && p == NULL && mi_try_new_handler(nothrow); i++) {
     if (size > MI_MAX_ALLOC_SIZE) return NULL; // call try_new_handler at least once
-    p = mi_theap_malloc(theap,size);
+    p = _mi_theap_malloc_zero(theap, size, false, 0, NULL);  // theap may be NULL on a fresh thread
   }
   return p;
 }
@@ -835,7 +835,7 @@ static mi_decl_noinline void* mi_heap_try_new(mi_heap_t* heap, size_t size, bool
 }
 
 mi_decl_nodiscard static mi_decl_restrict void* mi_theap_alloc_new(mi_theap_t* theap, size_t size) {
-  void* p = mi_theap_malloc(theap,size);
+  void* p = _mi_theap_malloc_zero(theap, size, false, 0, NULL);  // theap may be NULL on a fresh thread
   if mi_unlikely(p == NULL) return mi_theap_try_new(theap, size, false);
   return p;
 }
