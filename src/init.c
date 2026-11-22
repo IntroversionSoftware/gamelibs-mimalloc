@@ -634,7 +634,12 @@ static void mi_process_done_once(void) {
       if (mi_option_is_enabled(mi_option_show_stats) || mi_option_is_enabled(mi_option_verbose)) {
         mi_theap_collect(subproc_main->theap_meta, false /* force */); // update stats of all pages in theap_meta
         _mi_theap_merge_stats(subproc_main->theap_meta);
-        _mi_theap_merge_stats(_mi_theap_default());  // _mi_thread_locals_done can free
+        // _mi_thread_locals_done can free. The process can also exit from a thread that never allocated,
+        // with no theap: on Windows, closing the console runs ExitProcess on a thread made to handle it.
+        mi_theap_t* const theap = _mi_theap_default();
+        if (mi_theap_is_initialized(theap)) {
+          _mi_theap_merge_stats(theap);
+        }
         mi_heap_stats_merge_to_subproc(subproc_main->heap_main);
         mi_subproc_stats_print_out(mi_subproc_main(), NULL, NULL); // note: can try to access (the now freed) thread_locals in mi_heap_theap_peek
       }
